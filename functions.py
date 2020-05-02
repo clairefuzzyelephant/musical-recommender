@@ -1,4 +1,4 @@
-from music21 import stream, corpus, note, pitch, converter, meter
+from music21 import stream, corpus, note, pitch, converter, meter, key
 
 """
 Average pitch height for phrases of variable length in a score
@@ -66,6 +66,41 @@ def get_meter(score: stream.Stream):
         return (first_meter[0].numerator, first_meter[0].denominator)
 
 """
+Returns the starting key signature of the piece as a number of sharps (if negative, number of flats)
+"""
+def get_key(score: stream.Stream):
+    first_key = score.recurse().getElementsByClass(key.KeySignature)
+    if not first_key:
+        return 0
+    else:
+        return first_key[0].sharps
+
+"""
+Returns proportion of each note length from increments of sixteenths up until a whole note
+"""
+def get_note_lengths(score: stream.Stream):
+    note_lengths = dict()
+    note_count = 0.0
+    for n in score.recurse().getElementsByClass(['Note', 'Rest']):
+        if n.quarterLength not in note_lengths:
+            note_lengths[n.quarterLength] = 1
+        else:
+            note_lengths[n.quarterLength] += 1
+        note_count += 1.0
+    i = 0
+    vector = []
+    while i < 4:
+        i += 0.25
+        if i in note_lengths: 
+            vector.append(note_lengths[i]/note_count)
+        else:
+            vector.append(0)
+
+    return vector
+    
+    
+
+"""
 Returns type of piece as a vector with a 1 in the index that matches type of piece
 [chorale, jig, ballad, bach, mozart, beethoven, sonata, symphony, opus]
 """
@@ -80,9 +115,6 @@ def piece_name(score: stream.Stream):
     is_symphony = int('symphony' in filename or 'Symphony' in filename)
     is_part_of_opus = int('opus' in filename or 'Op.' in filename or 'Opus' in filename or 'op.' in filename)
     return (is_chorale, is_jig, is_bach, is_mozart, is_beethoven, is_sonata, is_symphony, is_part_of_opus)
-
-
-
 
 """
 Basic metadata features
@@ -107,8 +139,9 @@ Returns ....
 
 
 piece = converter.parse('essen/asia/china/han/han0001.krn')
-piece.show()
 print(metadata_attributes(piece))
+print(get_key(piece))
+print(get_note_lengths(piece))
 
 
 
