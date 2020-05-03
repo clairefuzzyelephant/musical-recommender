@@ -1,4 +1,5 @@
-from music21 import stream, corpus, note, pitch, converter, meter, key
+from music21 import stream, corpus, note, pitch, converter, meter, key, expressions
+import re
 
 """
 Average pitch height for phrases of variable length in a score
@@ -6,12 +7,11 @@ Average pitch height for phrases of variable length in a score
 def melodic_arch(score: stream.Stream, phrase_length: int):
     total_phrases = 0 #total number of phrases
     sum_pitch_height = [0 for i in range(phrase_length)]  #sum of heights for each note position, measured in semitones above middle C
-
     phrase = [] #phrase is empty at beginning of piece
     for n in score.recurse().getElementsByClass(['Note', 'Rest']):
         if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once 
             continue
-        if n.isRest:
+        if n.isRest or (len(n.expressions) != 0 and 'fermata' == n.expressions[0].name):
             if len(phrase) == phrase_length:
                 total_phrases += 1
                 for i in range(phrase_length):
@@ -40,14 +40,16 @@ def avg_phrase_length(score: stream.Stream):
     for n in score.recurse().getElementsByClass(['Note', 'Rest']):
         if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once 
             continue
-        if n.isRest:
+        if n.isRest or (len(n.expressions) != 0 and 'fermata' == n.expressions[0].name):
             phrase_lengths.append(length)
+            total_phrases += 1
             length = 0
         else:
             length += 1
     #reached end
     if length != 0:
         phrase_lengths.append(length)
+        total_phrases += 1
 
     if total_phrases == 0:
         return None                
@@ -102,19 +104,17 @@ def get_note_lengths(score: stream.Stream):
 
 """
 Returns type of piece as a vector with a 1 in the index that matches type of piece
-[chorale, jig, ballad, bach, mozart, beethoven, sonata, symphony, opus]
+[chorale, jig, ballad, bach, sonata, symphony, opus]
 """
 def piece_name(score: stream.Stream):
     filename = score.filePath.name
     is_chorale = int('chorale' in filename or 'Chorale' in filename)
     is_jig = int('jig' in filename or 'Jig' in filename)
     is_bach = int('bach' in filename or 'Bach' in filename or 'bwv' in filename)
-    is_mozart = int('mozart' in filename or 'Mozart' in filename)
-    is_beethoven = int('beethoven' in filename or 'Beethoven' in filename)
     is_sonata = int('sonata' in filename or 'Sonata' in filename)
     is_symphony = int('symphony' in filename or 'Symphony' in filename)
     is_part_of_opus = int('opus' in filename or 'Op.' in filename or 'Opus' in filename or 'op.' in filename)
-    return (is_chorale, is_jig, is_bach, is_mozart, is_beethoven, is_sonata, is_symphony, is_part_of_opus)
+    return (is_chorale, is_jig, is_bach, is_sonata, is_symphony, is_part_of_opus)
 
 """
 Basic metadata features
@@ -125,23 +125,33 @@ def metadata_attributes(score: stream.Stream):
 
 """
 Basic musical features
-Returns ....
+Returns [meter, key, num_parts, all_instruments]
 """
-# def musical_attributes(score: stream.Stream):
-#     filename = score.filePath.name
-#     meter = get_meter(score)
-#     return (meter)
+def musical_attributes(score: stream.Stream):
+    meter = get_meter(score)
+    key = get_key(score)
+    num_parts = len(score.parts)
+    all_parts = []
+    for part in range(num_parts):
+        all_parts.append(score.parts[part].partName)
+    return [meter, key, num_parts, all_parts]
 
 
 
+piece0 = converter.parse('essen/asia/china/han/han0001.krn')
+piece1 = corpus.parse('bach/bwv11.6')
+piece2 = corpus.parse('bach/bwv127.5')
+piece3 = corpus.parse('beethoven/opus18no3')
+piece4 = corpus.parse('mozart/k155/movement1')
 
+pieces = [piece0, piece1, piece2, piece3, piece4]
 
-
-
-piece = converter.parse('essen/asia/china/han/han0001.krn')
-print(metadata_attributes(piece))
-print(get_key(piece))
-print(get_note_lengths(piece))
+for p in pieces:
+    print(musical_attributes(p))
+    print(get_note_lengths(p))
+    print(avg_phrase_length(p))
+    print(piece_name(p))
+    print()
 
 
 
