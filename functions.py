@@ -1,4 +1,4 @@
-from music21 import stream, corpus, note, pitch, converter, meter, key, expressions
+from music21 import stream, corpus, note, pitch, converter, meter, key, expressions, scale
 import re
 
 """
@@ -54,6 +54,30 @@ def avg_phrase_length(score: stream.Stream):
     if total_phrases == 0:
         return None                
     return sum(phrase_lengths)/total_phrases
+
+"""
+Returns key with tonal certainty, and total percentage of notes not within the key
+"""
+def nonharmonic_notes(score: stream.Stream):
+    key_sig = score.analyze('key')
+    certainty = key_sig.tonalCertainty()
+    notes_within_key = [p.name for p in key_sig.pitches]
+    for pitch in key_sig.pitches:
+        notes_within_key.extend([p.name for p in pitch.getAllCommonEnharmonics()])
+    print(notes_within_key)
+    total_notes = 0 #total number of notes
+    num_nonharmonic = 0 #total number of nonharmonic notes
+    for n in score.recurse().getElementsByClass('Note'):
+        if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once 
+            continue
+        else:
+            if n.pitch.name not in notes_within_key:
+                num_nonharmonic += 1
+            total_notes += 1
+
+    if total_notes == 0:
+        return None                
+    return (certainty, num_nonharmonic/float(total_notes))
 
 
 
@@ -138,19 +162,21 @@ def musical_attributes(score: stream.Stream):
 
 
 
-piece0 = converter.parse('essen/asia/china/han/han0001.krn')
-piece1 = corpus.parse('bach/bwv11.6')
-piece2 = corpus.parse('bach/bwv127.5')
+# piece0 = converter.parse('essen/asia/china/han/han0001.krn')
+# piece1 = corpus.parse('bach/bwv11.6')
+# piece2 = corpus.parse('bach/bwv127.5')
 piece3 = corpus.parse('beethoven/opus18no3')
 piece4 = corpus.parse('mozart/k155/movement1')
 
-pieces = [piece0, piece1, piece2, piece3, piece4]
+pieces = [piece3, piece4]
 
 for p in pieces:
+    print(p.analyze('key'))
     print(musical_attributes(p))
     print(get_note_lengths(p))
     print(avg_phrase_length(p))
     print(piece_name(p))
+    print(nonharmonic_notes(p))
     print()
 
 
