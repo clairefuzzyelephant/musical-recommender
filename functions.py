@@ -64,7 +64,6 @@ def nonharmonic_notes(score: stream.Stream):
     notes_within_key = [p.name for p in key_sig.pitches]
     for pitch in key_sig.pitches:
         notes_within_key.extend([p.name for p in pitch.getAllCommonEnharmonics()])
-    print(notes_within_key)
     total_notes = 0 #total number of notes
     num_nonharmonic = 0 #total number of nonharmonic notes
     for n in score.recurse().getElementsByClass('Note'):
@@ -161,23 +160,136 @@ def musical_attributes(score: stream.Stream):
     return [meter, key, num_parts, all_parts]
 
 
+def similarity(s1: stream.Stream, s2: stream.Stream):
+    features = [] #each entry has a score from 0 to 1 based on similarity
+    #comparing metadata
+    ma1 = metadata_attributes(s1)
+    ma2 = metadata_attributes(s2)
+    comp1, comp2 = None, None
+    for tup in ma1:
+        if tup[0] == 'composer':
+            comp1 = tup[1]
+    for tup in ma2:
+        if tup[0] == 'composer':
+            comp2 = tup[1]
+    same_composer = False
+    if comp1 != None and comp2 != None: 
+        if (comp1 == comp2 or comp1 in comp2 or comp2 in comp1):
+            same_composer = True
+        else:
+            composer1 = comp1.split()
+            composer2 = comp2.split()
+            for word in composer1:
+                if len(word) > 4 and word in composer2:
+                    same_composer = True
+                    break
+                for word2 in composer2:
+                    if word in word2 or word2 in word:
+                        same_composer = True
+                        break
+    if same_composer:
+        print("Composer: same composer")
+        features.append(1)
+    else:
+        print("Composer: different composer")
+        features.append(0)
 
-# piece0 = converter.parse('essen/asia/china/han/han0001.krn')
+    #comparing basic musical data
+    ms1 = musical_attributes(s1)
+    ms2 = musical_attributes(s2)
+    if ms1[0] == ms2[0]:
+        print("Meter: same meter")
+        features.append(1)
+    else:
+        print("Meter: different meter")
+        features.append(0)
+    if ms1[1] == ms2[1]:
+        print("Key: same key")
+        features.append(1)
+    else:
+        print("Key: different key")
+        features.append(0)
+    if set(ms1[3]) == set(ms2[3]):
+        print("Instrumentation: same")
+        features.append(1)
+    else:
+        print("Instrumentation: different")
+        features.append(0)
+
+    #comparing note lengths
+    n1 = get_note_lengths(s1)
+    n2 = get_note_lengths(s2)
+    note_length_similarites = [min(n1[i], n2[i])/max(n1[i], n2[i]) if max(n1[i], n2[i]) != 0  else 1 for i in range(16)]
+    avg_note_length_similarity = sum(note_length_similarites)/16.0
+    print("Average note length similarity: " + str(avg_note_length_similarity))
+    features.append(avg_note_length_similarity)
+
+    #comparing phrase lengths
+    pl1 = avg_phrase_length(s1)
+    pl2 = avg_phrase_length(s2)
+    phrase_length_similarity = min(pl1, pl2)/max(pl1, pl2)
+    print("Average phrase length similarity: " + str(phrase_length_similarity))
+    features.append(phrase_length_similarity)
+
+    #comparing common piece types/names
+    p1 = piece_name(s1)
+    p2 = piece_name(s2)
+    matches = 0
+    total = 0
+    for i in range(6):
+        if p1[i] == 1 and p2[i] == 1:
+            total += 1
+            matches += 1
+        elif not (p1[i] == 0 and p2[i] == 0):
+            total += 1
+    if total == 0:
+        print("Common piece type similarity: 0")
+        features.append(0)
+    else:
+        print("Common piece type similarity: " + str(matches/float(total)))
+        features.append(matches/float(total))
+
+    #comparing key confidence and nonharmonic tones
+    nn1 = nonharmonic_notes(s1)
+    nn2 = nonharmonic_notes(s2)
+    key_confidence = min(nn1[0], nn2[0])/max(nn1[0], nn2[0])
+    print("Key analysis confidence similarity: " + str(key_confidence))
+    features.append(key_confidence)
+
+    prop_atonal = min(nn1[1], nn2[1])/max(nn1[1], nn2[1])
+    print("Proportion of nonharmonic notes similarity: " + str(prop_atonal))
+    features.append(prop_atonal)
+
+    return sum(features)/float(len(features))
+
+
+
+piece0 = converter.parse('essen/asia/china/han/han0001.krn')
+piece2 = converter.parse('essen/africa/arabic01.krn')
 # piece1 = corpus.parse('bach/bwv11.6')
 # piece2 = corpus.parse('bach/bwv127.5')
-piece3 = corpus.parse('beethoven/opus18no3')
-piece4 = corpus.parse('mozart/k155/movement1')
+# piece3 = corpus.parse('beethoven/opus18no3')
+# piece4 = corpus.parse('mozart/k155/movement1')
+piece1 = converter.parse('piano/bach_prelude.mxl')
+#piece2 = converter.parse('piano/chopin_balladeno4.mxl')
+piece3 = converter.parse('piano/debussy_clairdelune.mxl')
+piece4 = converter.parse('piano/ravel_unebarque.mxl')
+piece5 = converter.parse('piano/bartok_romania.mxl')
+piece6 = converter.parse('piano/debussy_reverie.mxl')
 
-pieces = [piece3, piece4]
+# pieces = [piece1, piece3, piece4]
 
-for p in pieces:
-    print(p.analyze('key'))
-    print(musical_attributes(p))
-    print(get_note_lengths(p))
-    print(avg_phrase_length(p))
-    print(piece_name(p))
-    print(nonharmonic_notes(p))
-    print()
+# for p in pieces:
+#     print(musical_attributes(p))
+#     print(metadata_attributes(p))
+#     print(get_note_lengths(p))
+#     print(avg_phrase_length(p))
+#     print(piece_name(p))
+#     print(nonharmonic_notes(p))
+#     print()
+print(similarity(piece3, piece6))
+print(similarity(piece3, piece4))
+print(similarity(piece1, piece5))
 
 
 
