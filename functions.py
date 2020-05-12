@@ -9,7 +9,9 @@ def melodic_arch(score: stream.Stream, phrase_length: int):
     total_phrases = 0 #total number of phrases
     sum_pitch_height = [0 for i in range(phrase_length)]  #sum of heights for each note position, measured in semitones above middle C
     phrase = [] #phrase is empty at beginning of piece
-    for n in score.recurse().getElementsByClass(['Note', 'Rest']):
+    for n in score.recurse().notesAndRests:
+        if isinstance(n, chord.Chord):
+            n = max(n)
         if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once
             continue
         if n.isRest or (len(n.expressions) != 0 and 'fermata' == n.expressions[0].name):
@@ -38,7 +40,9 @@ def avg_phrase_length(score: stream.Stream):
     total_phrases = 0 #total number of phrases
     length = 0 #phrase is empty at beginning of piece
     phrase_lengths = [] #all the phrase lengths
-    for n in score.recurse().getElementsByClass(['Note', 'Rest']):
+    for n in score.recurse().notesAndRests:
+        if isinstance(n, chord.Chord):
+            n = max(n)
         if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once
             continue
         if n.isRest or (len(n.expressions) != 0 and 'fermata' == n.expressions[0].name):
@@ -67,7 +71,9 @@ def nonharmonic_notes(score: stream.Stream):
         notes_within_key.extend([p.name for p in pitch.getAllCommonEnharmonics()])
     total_notes = 0 #total number of notes
     num_nonharmonic = 0 #total number of nonharmonic notes
-    for n in score.recurse().getElementsByClass('Note'):
+    for n in score.recurse().notes:
+        if isinstance(n, chord.Chord):
+            n = max(n)
         if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once
             continue
         else:
@@ -107,7 +113,9 @@ Returns distribution of note lengths from increments of sixteenths up until a wh
 def get_note_lengths(score: stream.Stream):
     note_lengths = dict()
     note_count = 0.0
-    for n in score.recurse().getElementsByClass(['Note', 'Rest']):
+    for n in score.recurse().notesAndRests:
+        if isinstance(n, chord.Chord):
+            n = max(n)
         if n.quarterLength not in note_lengths:
             note_lengths[n.quarterLength] = 1
         else:
@@ -131,6 +139,10 @@ def get_intervals(score: stream.Stream):
     ints = np.zeros(25)
     notes = score.flat.notes
     for n1, n2 in zip(notes[:-1], notes[1:]):
+        if isinstance(n1, chord.Chord):
+            n1 = max(n1)
+        if isinstance(n2, chord.Chord):
+            n2 = max(n2)
         curr_int = int(n2.pitch.ps - n1.pitch.ps)
 
         # if curr_int is a good interval, count its occurrence
