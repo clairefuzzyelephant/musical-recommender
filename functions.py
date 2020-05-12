@@ -83,7 +83,7 @@ def nonharmonic_notes(score: stream.Stream):
 
     if total_notes == 0:
         return None
-    return (certainty, num_nonharmonic/float(total_notes))
+    return (certainty, num_nonharmonic/total_notes)
 
 
 
@@ -190,11 +190,11 @@ def musical_attributes(score: stream.Stream):
 """
 Computes similarity between two pieces based on musical attributes, ideally
 """
-def similarity(s1: stream.Stream, s2: stream.Stream):
-    features = [] #each entry has a score from 0 to 1 based on similarity
+def similarity(s1: stream.Stream, s2: stream.Stream, d1=None, d2=None):
+    max_score, score = 0, 0
     #comparing metadata
-    ma1 = metadata_attributes(s1)
-    ma2 = metadata_attributes(s2)
+    ma1 = d1['metadata'] if d1 else metadata_attributes(s1)
+    ma2 = d2['metadata'] if d2 else metadata_attributes(s2)
     comp1, comp2 = None, None
     for tup in ma1:
         if tup[0] == 'composer':
@@ -217,57 +217,58 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
                     if word in word2 or word2 in word:
                         same_composer = True
                         break
+    
+    max_score += 3
     if same_composer:
-        print("Composer: same composer")
-        features.append(1)
-        features.append(1) #more weight on composer
-        features.append(1)
+        # print("Composer: same composer")
+        score += 3 #more weight on composer
     else:
-        print("Composer: different composer")
-        features.append(0)
-        features.append(0)
-        features.append(0)
+        # print("Composer: different composer")
+        pass
 
     #comparing basic musical data
-    ms1 = musical_attributes(s1)
-    ms2 = musical_attributes(s2)
+    ms1 = d1['musical_attr'] if d1 else musical_attributes(s1)
+    ms2 = d2['musical_attr'] if d2 else musical_attributes(s2)
+    max_score += 3
     if ms1[0] == ms2[0]:
-        print("Meter: same meter")
-        features.append(1)
+        # print("Meter: same meter")
+        score += 1
     else:
-        print("Meter: different meter")
-        features.append(0)
+        # print("Meter: different meter")
+        pass
     if ms1[1] == ms2[1]:
-        print("Key: same key")
-        features.append(1)
+        # print("Key: same key")
+        score += 1
     else:
-        print("Key: different key")
-        features.append(0)
+        # print("Key: different key")
+        pass
     if set(ms1[3]) == set(ms2[3]):
-        print("Instrumentation: same")
-        features.append(1)
+        # print("Instrumentation: same")
+        score += 1
     else:
-        print("Instrumentation: different")
-        features.append(0)
+        # print("Instrumentation: different")
+        pass
 
     #comparing note lengths
-    n1 = get_note_lengths(s1)
-    n2 = get_note_lengths(s2)
+    n1 = d1['note_lengths'] if d1 else get_note_lengths(s1)
+    n2 = d2['note_lengths'] if d2 else get_note_lengths(s2)
     note_length_similarites = [min(n1[i], n2[i])/max(n1[i], n2[i]) if max(n1[i], n2[i]) != 0  else 1 for i in range(16)]
     avg_note_length_similarity = sum(note_length_similarites)/16.0
-    print("Average note length similarity: %.4f" % avg_note_length_similarity)
-    features.append(avg_note_length_similarity)
+    # print("Average note length similarity: %.4f" % avg_note_length_similarity)
+    max_score += 1
+    score += avg_note_length_similarity
 
     #comparing phrase lengths
-    pl1 = avg_phrase_length(s1)
-    pl2 = avg_phrase_length(s2)
-    phrase_length_similarity = min(pl1, pl2)/max(pl1, pl2)
-    print("Average phrase length similarity: %.4f" % phrase_length_similarity)
-    features.append(phrase_length_similarity)
+    pl1 = d1['phrase_lengths'] if d1 else avg_phrase_length(s1)
+    pl2 = d2['phrase_lengths'] if d2 else avg_phrase_length(s2)
+    phrase_length_similarity = min(pl1, pl2)/max(pl1, pl2) if max(pl1, pl2) != 0 else 1
+    # print("Average phrase length similarity: %.4f" % phrase_length_similarity)
+    max_score += 1
+    score += phrase_length_similarity
 
     #comparing common piece types/names
-    p1 = piece_name(s1)
-    p2 = piece_name(s2)
+    p1 = d1['name'] if d1 else piece_name(s1)
+    p2 = d2['name'] if d2 else piece_name(s2)
     matches = 0
     total = 0
     for i in range(6):
@@ -276,39 +277,42 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
             matches += 1
         elif not (p1[i] == 0 and p2[i] == 0):
             total += 1
+    max_score += 1
     if total == 0:
-        print("Common piece type similarity: 0")
-        features.append(0)
+        # print("Common piece type similarity: 0")
+        pass
     else:
-        print("Common piece type similarity: %.4f" % (matches/float(total)))
-        features.append(matches/float(total))
+        # print("Common piece type similarity: %.4f" % (matches/total))
+        score += matches/total
 
     #comparing key confidence and nonharmonic tones
-    nn1 = nonharmonic_notes(s1)
-    nn2 = nonharmonic_notes(s2)
-    key_confidence = min(nn1[0], nn2[0])/max(nn1[0], nn2[0])
-    print("Key analysis confidence similarity: %.4f" % key_confidence)
-    features.append(key_confidence)
-    features.append(key_confidence) #more weight placed on key confidence
+    nn1 = d1['nonharmonics'] if d1 else nonharmonic_notes(s1)
+    nn2 = d2['nonharmonics'] if d2 else nonharmonic_notes(s2)
+    key_confidence = min(nn1[0], nn2[0])/max(nn1[0], nn2[0]) if max(nn1[0], nn2[0]) != 0 else 1
+    # print("Key analysis confidence similarity: %.4f" % key_confidence)
+    max_score += 2
+    score += 2 * key_confidence #more weight placed on key confidence
 
-    prop_atonal = min(nn1[1], nn2[1])/max(nn1[1], nn2[1])
-    print("Proportion of nonharmonic notes similarity: %.4f" % prop_atonal)
-    features.append(prop_atonal)
-    features.append(prop_atonal) #more weight placed on tonality
+    prop_atonal = min(nn1[1], nn2[1])/max(nn1[1], nn2[1]) if max(nn1[1], nn2[1]) != 0 else 1
+    # print("Proportion of nonharmonic notes similarity: %.4f" % prop_atonal)
+    max_score += 2
+    score += 2 * prop_atonal #more weight placed on tonality
 
-    intervals1, intervals2 = get_intervals(s1), get_intervals(s2)
-    interval_dot = np.dot(intervals1, intervals2)
-    print("Interval distribution similarity metric: %.4f" % interval_dot)
-    features.append(interval_dot)
+    intervals1 = d1['intervals'] if d1 else get_intervals(s1)
+    intervals2 = d2['intervals'] if d2 else get_intervals(s2)
+    interval_dot = np.dot(intervals1, intervals2) / np.sqrt(np.dot(intervals1, intervals1) * np.dot(intervals2, intervals2))
+    # print("Interval distribution similarity metric: %.4f" % interval_dot)
+    max_score += 1
+    score += interval_dot
 
     #comparing melodic arch
     limit_phrase_length = int((pl1+pl2)/2.0 + 5)
     all_diffs = []
-    for i in range(5, int((pl1+pl2)/2.0 + 5)):
+    for i in range(5, limit_phrase_length):
         arch1 = melodic_arch(s1, i)
         arch2 = melodic_arch(s2, i)
-        if arch1 == None or arch2 == None:
-            print("Arch difference for length %d phrases: n/a" % i)
+        if arch1 is None or arch2 is None:
+            # print("Arch difference for length %d phrases: n/a" % i)
             limit_phrase_length -= 1
             continue
         sim = 0
@@ -318,46 +322,45 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
             else:
                 diff = abs(arch1[n] - arch2[n])
                 sim += diff
-        sim = sim/i #average difference 
-        print("Arch similarity for length %d phrases: %.4f" % (i, 1.0/sim))
-        if sim < 1:
-            all_diffs.append(1.0)
-        else:
-            all_diffs.append(1.0/sim)
+        sim /= i #average difference 
+        # print("Arch similarity for length %d phrases: %.4f" % (i, 1.0/sim))
+        all_diffs.append(min(1.0, 1.0/sim) if sim > 0 else 1)
     
-    for i in all_diffs:
-        features.append(i)
+    max_score += len(all_diffs)
+    score += sum(all_diffs)
     
 
-    return sum(features)/float(len(features))
+    return score/max_score
 
 
 
-piece0 = converter.parse('essen/asia/china/han/han0001.krn')
-piece2 = converter.parse('essen/africa/arabic01.krn')
-# piece1 = corpus.parse('bach/bwv11.6')
-# piece2 = corpus.parse('bach/bwv127.5')
-# piece3 = corpus.parse('beethoven/opus18no3')
-# piece4 = corpus.parse('mozart/k155/movement1')
-piece1 = converter.parse('piano/bach_prelude.mxl')
-#piece2 = converter.parse('piano/chopin_balladeno4.mxl')
-piece3 = converter.parse('piano/debussy_clairdelune.mxl')
-piece4 = converter.parse('piano/ravel_unebarque.mxl')
-piece5 = converter.parse('piano/bartok_romania.mxl')
-piece6 = converter.parse('piano/debussy_reverie.mxl')
-piece7 = corpus.parse('beethoven/opus74.mxl')
+if __name__ == "__main__":
 
-# pieces = [piece1, piece3, piece4]
+    piece0 = converter.parse('essen/asia/china/han/han0001.krn')
+    piece2 = converter.parse('essen/africa/arabic01.krn')
+    # piece1 = corpus.parse('bach/bwv11.6')
+    # piece2 = corpus.parse('bach/bwv127.5')
+    # piece3 = corpus.parse('beethoven/opus18no3')
+    # piece4 = corpus.parse('mozart/k155/movement1')
+    piece1 = converter.parse('piano/bach_prelude.mxl')
+    #piece2 = converter.parse('piano/chopin_balladeno4.mxl')
+    piece3 = converter.parse('piano/debussy_clairdelune.mxl')
+    piece4 = converter.parse('piano/ravel_unebarque.mxl')
+    piece5 = converter.parse('piano/bartok_romania.mxl')
+    piece6 = converter.parse('piano/debussy_reverie.mxl')
+    piece7 = corpus.parse('beethoven/opus74.mxl')
 
-# for p in pieces:
-#     print(musical_attributes(p))
-#     print(metadata_attributes(p))
-#     print(get_note_lengths(p))
-#     print(avg_phrase_length(p))
-#     print(piece_name(p))
-#     print(nonharmonic_notes(p))
-#     print()
-print(similarity(piece3, piece6) , "debussy vs. debussy")
-print(similarity(piece3, piece4) , "debussy vs. ravel")
-print(similarity(piece1, piece5) , "bach vs. bartok")
-print(similarity(piece1, piece7) , "bach vs. beethoven")
+    # pieces = [piece1, piece3, piece4]
+
+    # for p in pieces:
+    #     # print(musical_attributes(p))
+    #     # print(metadata_attributes(p))
+    #     # print(get_note_lengths(p))
+    #     # print(avg_phrase_length(p))
+    #     # print(piece_name(p))
+    #     # print(nonharmonic_notes(p))
+    #     # print()
+    # print(similarity(piece3, piece6) , "debussy vs. debussy")
+    # print(similarity(piece3, piece4) , "debussy vs. ravel")
+    # print(similarity(piece1, piece5) , "bach vs. bartok")
+    # print(similarity(piece1, piece7) , "bach vs. beethoven")

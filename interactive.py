@@ -14,7 +14,11 @@ name_map = {name: i for i, name in enumerate(names)}
 stream_map = {}
 for path in Path('essen').rglob('*.krn'):
     if path.name in name_map:
-    	stream_map[path.name] = converter.parse(path)
+    	sc = converter.parse(path)
+    	part = sc.parts[0]
+    	while len(part) > 10:
+    		part.pop(-1)
+    	stream_map[path.name] = sc
 
 print('loading precomputed data...')
 
@@ -50,7 +54,10 @@ while curr != -1:
 	top = np.argsort(-prefs)[:3]
 	for i, t in enumerate(top):
 		print('%d. %s' % (i + 1, names[t]))
-	ans = int(input('choose from your new recommendations: ')) - 1
+	try:
+		ans = int(input('choose from your new recommendations: ')) - 1
+	except:
+		ans = 0
 	if ans not in range(3):
 		ans = 0
 	curr = top[ans]
