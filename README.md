@@ -3,7 +3,7 @@ A program that recommends folk music to users based on similarity features.
 
 # TL;DR How to Run
 
-Note: must be using Python 3.
+Note: must be using Python 3. System must have music21, pygame, pandas installed.
 
     $ python interactive.py
     
