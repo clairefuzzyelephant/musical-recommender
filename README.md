@@ -48,7 +48,7 @@ And then after the piece finishes playing...
     3. han0262.krn
     choose from your new recommendations: USER_INPUT
 
-After user inputs preference, recommender will recommend a similar song (if y) or a different song (if n). Yay!
+After user inputs preference, recommender will recommend a similar song (if y) or a different song (if n). As you listen to and like or dislike more songs, the program will take the weighted average of your preferences (weighted towards recency) to recommend more songs. Yay!
 
 Notes: We realized that performance was not very accurate so we decided to try to train a LSTM model on sequences of notes. Scores were read and processed into 31-note sequences that were then fed into the neural network - it would be given a 30-note sequence with the task of predicting the 31st note. However, after hours of training it did not converge well. We decided to scratch this idea and continue with our previous implementation of pure feature extraction, but we recognize that with a well-designed deeper LSTM next time, we may have a better chance of producing even better results. 
 
