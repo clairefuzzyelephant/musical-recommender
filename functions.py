@@ -61,7 +61,7 @@ def avg_phrase_length(score: stream.Stream):
     return sum(phrase_lengths)/total_phrases
 
 """
-Returns key with tonal certainty, and total percentage of notes not within the key
+Returns key with tonal certainty, and total percentage of notes within the key
 """
 def nonharmonic_notes(score: stream.Stream):
     key_sig = score.analyze('key')
@@ -83,7 +83,7 @@ def nonharmonic_notes(score: stream.Stream):
 
     if total_notes == 0:
         return None
-    return (certainty, num_nonharmonic/float(total_notes))
+    return (certainty, 1-num_nonharmonic/float(total_notes))
 
 
 
