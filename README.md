@@ -1,5 +1,5 @@
 # musical-recommender
-A program that recommends classical music to users based on similarity features.
+A program that recommends folk music to users based on similarity features.
 
 # TL;DR How to Run
 
