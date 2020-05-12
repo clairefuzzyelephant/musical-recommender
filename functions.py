@@ -1,5 +1,4 @@
 from music21 import stream, corpus, note, pitch, converter, meter, key, expressions, scale, chord
-import re
 import numpy as np
 
 """
