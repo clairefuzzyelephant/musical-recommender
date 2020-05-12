@@ -1,4 +1,4 @@
-from music21 import stream, corpus, note, pitch, converter, meter, key, expressions, scale
+from music21 import stream, corpus, note, pitch, converter, meter, key, expressions, scale, chord
 import re
 import numpy as np
 
@@ -221,8 +221,11 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
         print("Composer: same composer")
         features.append(1)
         features.append(1) #more weight on composer
+        features.append(1)
     else:
         print("Composer: different composer")
+        features.append(0)
+        features.append(0)
         features.append(0)
 
     #comparing basic musical data
@@ -277,7 +280,7 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
         print("Common piece type similarity: 0")
         features.append(0)
     else:
-        print("Common piece type similarity: %.4f" % matches/float(total))
+        print("Common piece type similarity: %.4f" % (matches/float(total)))
         features.append(matches/float(total))
 
     #comparing key confidence and nonharmonic tones
@@ -296,7 +299,7 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
     intervals1, intervals2 = get_intervals(s1), get_intervals(s2)
     interval_dot = np.dot(intervals1, intervals2)
     print("Interval distribution similarity metric: %.4f" % interval_dot)
-    features.append(interval_dot) #more weight placed on tonality
+    features.append(interval_dot)
 
     #comparing melodic arch
     limit_phrase_length = int((pl1+pl2)/2.0 + 5)
