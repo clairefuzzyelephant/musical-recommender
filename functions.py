@@ -207,11 +207,10 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
                         break
     if same_composer:
         print("Composer: same composer")
-        features.append(1) #more weight on composer
         features.append(1)
+        features.append(1) #more weight on composer
     else:
         print("Composer: different composer")
-        features.append(0)
         features.append(0)
 
     #comparing basic musical data
@@ -241,14 +240,14 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
     n2 = get_note_lengths(s2)
     note_length_similarites = [min(n1[i], n2[i])/max(n1[i], n2[i]) if max(n1[i], n2[i]) != 0  else 1 for i in range(16)]
     avg_note_length_similarity = sum(note_length_similarites)/16.0
-    print("Average note length similarity: " + str(avg_note_length_similarity))
+    print("Average note length similarity: %.4f" % avg_note_length_similarity)
     features.append(avg_note_length_similarity)
 
     #comparing phrase lengths
     pl1 = avg_phrase_length(s1)
     pl2 = avg_phrase_length(s2)
     phrase_length_similarity = min(pl1, pl2)/max(pl1, pl2)
-    print("Average phrase length similarity: " + str(phrase_length_similarity))
+    print("Average phrase length similarity: %.4f" % phrase_length_similarity)
     features.append(phrase_length_similarity)
 
     #comparing common piece types/names
@@ -266,21 +265,26 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
         print("Common piece type similarity: 0")
         features.append(0)
     else:
-        print("Common piece type similarity: " + str(matches/float(total)))
+        print("Common piece type similarity: %.4f" % matches/float(total))
         features.append(matches/float(total))
 
     #comparing key confidence and nonharmonic tones
     nn1 = nonharmonic_notes(s1)
     nn2 = nonharmonic_notes(s2)
     key_confidence = min(nn1[0], nn2[0])/max(nn1[0], nn2[0])
-    print("Key analysis confidence similarity: " + str(key_confidence))
+    print("Key analysis confidence similarity: %.4f" % key_confidence)
     features.append(key_confidence)
     features.append(key_confidence) #more weight placed on key confidence
 
     prop_atonal = min(nn1[1], nn2[1])/max(nn1[1], nn2[1])
-    print("Proportion of nonharmonic notes similarity: " + str(prop_atonal))
+    print("Proportion of nonharmonic notes similarity: %.4f" % prop_atonal)
     features.append(prop_atonal)
     features.append(prop_atonal) #more weight placed on tonality
+
+    intervals1, intervals2 = get_intervals(s1), get_intervals(s2)
+    interval_dot = np.dot(intervals1, intervals2)
+    print("Interval distribution similarity metric: %.4f" % interval_dot)
+    features.append(interval_dot) #more weight placed on tonality
 
     #comparing melodic arch
     limit_phrase_length = int((pl1+pl2)/2.0 + 5)
@@ -289,7 +293,7 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
         arch1 = melodic_arch(s1, i)
         arch2 = melodic_arch(s2, i)
         if arch1 == None or arch2 == None:
-            print("Arch difference for length " + str(i) + " phrases: n/a")
+            print("Arch difference for length %d phrases: n/a" % i)
             limit_phrase_length -= 1
             continue
         sim = 0
@@ -300,7 +304,7 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
                 diff = abs(arch1[n] - arch2[n])
                 sim += diff
         sim = sim/i #average difference 
-        print("Arch similarity for length " + str(i) + " phrases: " + str(1.0/sim))
+        print("Arch similarity for length %d phrases: %.4f" % (i, 1.0/sim))
         if sim < 1:
             all_diffs.append(1.0)
         else:
