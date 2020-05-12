@@ -267,6 +267,34 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
     features.append(prop_atonal)
     features.append(prop_atonal) #more weight placed on tonality
 
+    #comparing melodic arch
+    limit_phrase_length = int((pl1+pl2)/2.0 + 5)
+    all_diffs = []
+    for i in range(5, int((pl1+pl2)/2.0 + 5)):
+        arch1 = melodic_arch(s1, i)
+        arch2 = melodic_arch(s2, i)
+        if arch1 == None or arch2 == None:
+            print("Arch difference for length " + str(i) + " phrases: n/a")
+            limit_phrase_length -= 1
+            continue
+        sim = 0
+        for n in range(i):
+            if max(arch1[n], arch2[n]) == 0:
+                continue
+            else:
+                diff = abs(arch1[n] - arch2[n])
+                sim += diff
+        sim = sim/i #average difference 
+        print("Arch similarity for length " + str(i) + " phrases: " + str(1.0/sim))
+        if sim < 1:
+            all_diffs.append(1.0)
+        else:
+            all_diffs.append(1.0/sim)
+    
+    for i in all_diffs:
+        features.append(i)
+    
+
     return sum(features)/float(len(features))
 
 
