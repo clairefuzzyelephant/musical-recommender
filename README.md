@@ -32,10 +32,23 @@ The results were mixed- although we looked at a decent number of musical aspects
 
 However, we went ahead and used this function to precompute the similarity scores between ~600 of the songs in the Essen dataset. Thus, we can recommend pieces in real time based on user input in a terminal:
 
-    $ python functions.py
-    Random song playing now! Please type LIKE or DISLIKE accordingly: 
+    $ python interactive.py
+    loading streams...
+    loading precomputed data...
+    loaded! Press enter to begin...
+    
+    now playing han0294.krn
 
-After user inputs preference, recommender will recommend a similar song (if LIKE) or a different song (if DISLIKE). Yay!
+And then after the piece finishes playing...
+
+
+    did you like it (q to quit)? (y)/n: USER_INPUT
+    1. han0022.krn
+    2. han0013.krn
+    3. han0262.krn
+    choose from your new recommendations: USER_INPUT
+
+After user inputs preference, recommender will recommend a similar song (if y) or a different song (if n). Yay!
 
 Notes: We realized that performance was not very accurate so we decided to try to train a LSTM model on sequences of notes. Scores were read and processed into 31-note sequences that were then fed into the neural network - it would be given a 30-note sequence with the task of predicting the 31st note. However, after hours of training it did not converge well. We decided to scratch this idea and continue with our previous implementation of pure feature extraction, but we recognize that with a well-designed deeper LSTM next time, we may have a better chance of producing even better results. 
 
