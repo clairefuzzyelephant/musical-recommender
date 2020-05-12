@@ -1,5 +1,6 @@
 from music21 import stream, corpus, note, pitch, converter, meter, key, expressions, scale
 import re
+import numpy as np
 
 """
 Average pitch height for phrases of variable length in a score
@@ -101,7 +102,7 @@ def get_key(score: stream.Stream):
         return first_key[0].sharps
 
 """
-Returns proportion of each note length from increments of sixteenths up until a whole note
+Returns distribution of note lengths from increments of sixteenths up until a whole note
 """
 def get_note_lengths(score: stream.Stream):
     note_lengths = dict()
@@ -122,8 +123,22 @@ def get_note_lengths(score: stream.Stream):
             vector.append(0)
 
     return vector
-    
-    
+
+"""
+Computes distribution of intervals within one octave
+"""
+def get_intervals(score: stream.Stream):
+    ints = np.zeros(25)
+    notes = score.flat.notes
+    for n1, n2 in zip(notes[:-1], notes[1:]):
+        curr_int = int(n2.pitch.ps - n1.pitch.ps)
+
+        # if curr_int is a good interval, count its occurrence
+        if abs(curr_int) <= 12:
+            ints[abs(curr_int) + 12] += 1
+
+    return ints / ints.sum()
+
 
 """
 Returns type of piece as a vector with a 1 in the index that matches type of piece

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from dataset import SnipsDataset
+from dataset import *
 from model import ScoreEncoder
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -18,10 +18,10 @@ CHECKPOINT_PATH = 'model/score-encoder.ckpt'
 NUM_ELEMENTS = 111
 HIDDEN_SIZE = 256
 NUM_LAYERS = 3
-KEY_SIZE = 256
+KEY_SIZE = 128
 
-LR = 1e-4
-NUM_EPOCHS = 1
+LR = 1e-3
+NUM_EPOCHS = 20
 loss_fn = nn.CrossEntropyLoss().to(device)
 DROPOUT = 0
 
@@ -31,8 +31,7 @@ with open('essen_data/snips.pickle', 'rb') as handle:
     snips = pickle.load(handle)
 
 dataset = SnipsDataset(snips)
-train_data = DataLoader(dataset, batch_size=4,
-                        shuffle=True, num_workers=0)
+train_data = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=6)
 
 
 model = ScoreEncoder(NUM_ELEMENTS, HIDDEN_SIZE, NUM_LAYERS, KEY_SIZE, DROPOUT)
@@ -44,12 +43,11 @@ for epoch in range(NUM_EPOCHS):
     total_loss = 0
     model.train()
     for i, data in enumerate(train_data):
-        if i % 5000 == 0:
+        if i % 500 == 0:
             print('Epoch {} Batch {}'.format(epoch, i))
 
         # get training inputs from corpus
         inputs, outputs = data[0].to(device), data[1].to(device)
-
         optimizer.zero_grad()
         preds = model(inputs)
         loss = loss_fn(preds, outputs)

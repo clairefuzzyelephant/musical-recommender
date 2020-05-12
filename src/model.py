@@ -20,7 +20,7 @@ class SelfAttn(nn.Module):
         queries = self.wq(x)
         keys = self.wk(x)
         values = self.wv(x)
-        weights = self.softmax(torch.mm(queries, keys.T) / self.sqrt_key_size)
+        weights = self.softmax(torch.mm(queries, keys.t()) / self.sqrt_key_size)
         return torch.mm(weights, values)
 
 
