@@ -32,8 +32,8 @@ The results were mixed- although we looked at a decent number of musical aspects
 
 However, we went ahead and used this function to precompute the similarity scores between ~500 of the songs in the Essen dataset. Thus, we can recommend pieces in real time based on user input in a terminal:
 
-  $ python functions.py
-  Random song playing now! Please type LIKE or DISLIKE accordingly: 
+    $ python functions.py
+    Random song playing now! Please type LIKE or DISLIKE accordingly: 
 
 After user inputs preference, recommender will recommend a similar song (if LIKE) or a different song (if DISLIKE). Yay!
 
