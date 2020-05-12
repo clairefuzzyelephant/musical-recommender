@@ -30,7 +30,7 @@ We coded a similarity function that aggregated the results from these aspect com
 
 The results were mixed- although we looked at a decent number of musical aspects, there are probably lots more that we glossed over. Some similarity scores made sense and others did not, i.e. a Bach piece vs. a Beethoven piece had a higher similarity score than two of Debussy's own pieces compared to each other.
 
-However, we went ahead and used this function to precompute the similarity scores between ~500 of the songs in the Essen dataset. Thus, we can recommend pieces in real time based on user input in a terminal:
+However, we went ahead and used this function to precompute the similarity scores between ~600 of the songs in the Essen dataset. Thus, we can recommend pieces in real time based on user input in a terminal:
 
     $ python functions.py
     Random song playing now! Please type LIKE or DISLIKE accordingly: 
