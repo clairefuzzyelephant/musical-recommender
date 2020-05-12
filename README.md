@@ -1,6 +1,13 @@
 # musical-recommender
 A program that recommends classical music to users based on similarity features.
 
+# TL;DR How to Run
+
+Note: must be using Python 3.
+
+    $ python interactive.py
+    
+Follow the terminal prompts and discover folk music!
 
 # Overview
 There are numerous ML recommender systems out there for recommending trending pop songs to users based on other users' interests. This makes sense for pop songs, but not so much for classical music, where the musical structure and composition is often more relevant to whether someone enjoys a piece or not, as opposed to whether millions of people also clicked on the same performance. We aim to create a classical music recommender to a user based on musical similarities between the pieces the user has already liked.
