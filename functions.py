@@ -9,7 +9,7 @@ def melodic_arch(score: stream.Stream, phrase_length: int):
     sum_pitch_height = [0 for i in range(phrase_length)]  #sum of heights for each note position, measured in semitones above middle C
     phrase = [] #phrase is empty at beginning of piece
     for n in score.recurse().getElementsByClass(['Note', 'Rest']):
-        if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once 
+        if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once
             continue
         if n.isRest or (len(n.expressions) != 0 and 'fermata' == n.expressions[0].name):
             if len(phrase) == phrase_length:
@@ -26,7 +26,7 @@ def melodic_arch(score: stream.Stream, phrase_length: int):
                     sum_pitch_height[i] += phrase[i].pitch.ps - 60
 
     if total_phrases == 0:
-        return None                
+        return None
     return [height/total_phrases for height in sum_pitch_height]
 
 
@@ -36,9 +36,9 @@ Returns average phrase length
 def avg_phrase_length(score: stream.Stream):
     total_phrases = 0 #total number of phrases
     length = 0 #phrase is empty at beginning of piece
-    phrase_lengths = [] #all the phrase lengths 
+    phrase_lengths = [] #all the phrase lengths
     for n in score.recurse().getElementsByClass(['Note', 'Rest']):
-        if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once 
+        if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once
             continue
         if n.isRest or (len(n.expressions) != 0 and 'fermata' == n.expressions[0].name):
             phrase_lengths.append(length)
@@ -52,7 +52,7 @@ def avg_phrase_length(score: stream.Stream):
         total_phrases += 1
 
     if total_phrases == 0:
-        return None                
+        return None
     return sum(phrase_lengths)/total_phrases
 
 """
@@ -67,7 +67,7 @@ def nonharmonic_notes(score: stream.Stream):
     total_notes = 0 #total number of notes
     num_nonharmonic = 0 #total number of nonharmonic notes
     for n in score.recurse().getElementsByClass('Note'):
-        if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once 
+        if n.tie and (n.tie.type == 'stop' or n.tie.type == 'continue'): #do not count a tied note more than once
             continue
         else:
             if n.pitch.name not in notes_within_key:
@@ -75,7 +75,7 @@ def nonharmonic_notes(score: stream.Stream):
             total_notes += 1
 
     if total_notes == 0:
-        return None                
+        return None
     return (certainty, num_nonharmonic/float(total_notes))
 
 
@@ -116,14 +116,14 @@ def get_note_lengths(score: stream.Stream):
     vector = []
     while i < 4:
         i += 0.25
-        if i in note_lengths: 
+        if i in note_lengths:
             vector.append(note_lengths[i]/note_count)
         else:
             vector.append(0)
 
     return vector
-    
-    
+
+
 
 """
 Returns type of piece as a vector with a 1 in the index that matches type of piece
@@ -151,15 +151,18 @@ Basic musical features
 Returns [meter, key, num_parts, all_instruments]
 """
 def musical_attributes(score: stream.Stream):
-    meter = get_meter(score)
-    key = get_key(score)
-    num_parts = len(score.parts)
+    meter = get_meter(score) #gets the first meter of the score
+    key = get_key(score) #gets the first key of the score
+    num_parts = len(score.parts) #number of instrument parts
     all_parts = []
     for part in range(num_parts):
-        all_parts.append(score.parts[part].partName)
+        all_parts.append(score.parts[part].partName) #list of each part name
     return [meter, key, num_parts, all_parts]
 
 
+"""
+Computes similarity between two pieces based on musical attributes, ideally
+"""
 def similarity(s1: stream.Stream, s2: stream.Stream):
     features = [] #each entry has a score from 0 to 1 based on similarity
     #comparing metadata
@@ -173,7 +176,7 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
         if tup[0] == 'composer':
             comp2 = tup[1]
     same_composer = False
-    if comp1 != None and comp2 != None: 
+    if comp1 != None and comp2 != None:
         if (comp1 == comp2 or comp1 in comp2 or comp2 in comp1):
             same_composer = True
         else:
@@ -189,9 +192,11 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
                         break
     if same_composer:
         print("Composer: same composer")
+        features.append(1) #more weight on composer
         features.append(1)
     else:
         print("Composer: different composer")
+        features.append(0)
         features.append(0)
 
     #comparing basic musical data
@@ -255,10 +260,12 @@ def similarity(s1: stream.Stream, s2: stream.Stream):
     key_confidence = min(nn1[0], nn2[0])/max(nn1[0], nn2[0])
     print("Key analysis confidence similarity: " + str(key_confidence))
     features.append(key_confidence)
+    features.append(key_confidence) #more weight placed on key confidence
 
     prop_atonal = min(nn1[1], nn2[1])/max(nn1[1], nn2[1])
     print("Proportion of nonharmonic notes similarity: " + str(prop_atonal))
     features.append(prop_atonal)
+    features.append(prop_atonal) #more weight placed on tonality
 
     return sum(features)/float(len(features))
 
@@ -276,6 +283,7 @@ piece3 = converter.parse('piano/debussy_clairdelune.mxl')
 piece4 = converter.parse('piano/ravel_unebarque.mxl')
 piece5 = converter.parse('piano/bartok_romania.mxl')
 piece6 = converter.parse('piano/debussy_reverie.mxl')
+piece7 = corpus.parse('beethoven/opus74.mxl')
 
 # pieces = [piece1, piece3, piece4]
 
@@ -287,10 +295,7 @@ piece6 = converter.parse('piano/debussy_reverie.mxl')
 #     print(piece_name(p))
 #     print(nonharmonic_notes(p))
 #     print()
-print(similarity(piece3, piece6))
-print(similarity(piece3, piece4))
-print(similarity(piece1, piece5))
-
-
-
-
+print(similarity(piece3, piece6) , "debussy vs. debussy")
+print(similarity(piece3, piece4) , "debussy vs. ravel")
+print(similarity(piece1, piece5) , "bach vs. bartok")
+print(similarity(piece1, piece7) , "bach vs. beethoven")
